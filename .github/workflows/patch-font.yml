@@ -9,6 +9,9 @@ on:
         default: 'v0.050'
         type: string
 
+permissions:
+  contents: write
+
 jobs:
   patch:
     runs-on: ubuntu-latest
@@ -25,11 +28,17 @@ jobs:
           
       - name: Patch
         run: |
-          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/juliamono-nerd-font:/out nerdfonts/patcher --mono --complete --careful --no-progressbars 
+          mkdir -p juliamono-nerd-font/font
+          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/juliamono-nerd-font/font:/out nerdfonts/patcher --mono --complete --careful --no-progressbars 
+          zip font.zip font/*.ttf
           
       - name: Commit and Push
+        env:
+          GH_TOKEN: ${{ github.token }}
         run: |
           cd juliamono-nerd-font
+          git config --global user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
+          git config --global user.name "$(gh api /users/${GITHUB_ACTOR} | jq .name -r)"
           git add .
           git commit -m 'Updated juliamono-nerd-font to ${{ inputs.version }}'
           git push
