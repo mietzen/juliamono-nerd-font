@@ -1,9 +1,13 @@
 name: Patch Font
 
 on:
-  push:
-    branches: [ "main" ]
   workflow_dispatch:
+    inputs:
+      version:
+        description: 'juliamono version'
+        required: true
+        default: 'v0.050'
+        type: string
 
 jobs:
   patch:
@@ -11,15 +15,21 @@ jobs:
     steps:
       - uses: actions/checkout@v3
         with:
+          path: juliamono-nerd-font
+        
+      - uses: actions/checkout@v3
+        with:
           repository: 'cormullion/juliamono'
+          ref: ${{ inputs.version }}
           path: juliamono
           
       - name: Patch
         run: |
-          mkdir juliamono-nerd-font
-          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/juliamono-nerd-font:/out nerdfonts/patcher --mono --complete --careful
+          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/juliamono-nerd-font:/out nerdfonts/patcher --mono --complete --careful --no-progressbars 
           
-      - uses: actions/upload-artifact@v3
-        with:
-          name: juliamono-nerd-font
-          path: ./juliamono-nerd-font
+      - name: Commit and Push
+        run: |
+          cd juliamono-nerd-font
+          git add .
+          git commit -m 'Updated juliamono-nerd-font to ${{ inputs.version }}'
+          git push
