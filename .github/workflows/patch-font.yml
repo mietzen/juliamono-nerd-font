@@ -1,0 +1,32 @@
+name: Patch Font
+
+on:
+  push:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          repository: 'cormullion/juliamono'
+          ref: 'main'
+          path: 'juliamono'
+          
+      - uses: actions/checkout@v3
+        with:
+          repository: 'cormullion/juliamono'
+          ref: 'main'
+          path: 'juliamono'
+
+      - name: Patch
+        run: |
+          mkdir juliamono-nerd-font
+          docker run --rm -v ./juliamono:/in -v ./juliamono-nerd-font:/out nerdfonts/patcher --mono --complete --careful
+          
+      - uses: actions/upload-artifact@v3
+        with:
+          name: juliamono-nerd-font
+          path: ./juliamono-nerd-font
