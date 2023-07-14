@@ -6,4 +6,4 @@ This is a the beautiful [JuliaMono](https://github.com/cormullion/juliamono) fon
 
 ## Feel free to fork and modify!
 
-Just fork adjust the fontforge settings in .github/workflows/patch-font.yml and run the action! (If you patch all glyphs it runs approximately 20 - 30 min) 
+Just fork and adjust the fontforge settings in .github/workflows/patch-font.yml, then run the action! (If you patch all glyphs it runs approximately 20 - 30 min) 
