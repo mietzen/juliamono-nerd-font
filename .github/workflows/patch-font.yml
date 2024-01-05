@@ -37,8 +37,8 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           cd juliamono-nerd-font
-          git config --global user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
-          git config --global user.name "$(gh api /users/${GITHUB_ACTOR} | jq .name -r)"
+          git config --local user.email "131801252+merger-bot[bot]@users.noreply.github.com"
+          git config --local user.name "merger-bot[bot]"
           sed "s%\[\*\*Download\*\*\].*%\[\*\*Download\*\*\](https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ inputs.version }}/font.zip)%g" README.md
           git add .
           git commit -m 'Updated juliamono-nerd-font to ${{ inputs.version }}'
