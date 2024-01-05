@@ -30,8 +30,7 @@ jobs:
         run: |
           mkdir -p juliamono-nerd-font/font
           docker run --rm -v `pwd`/juliamono:/in -v `pwd`/juliamono-nerd-font/font:/out nerdfonts/patcher --mono --complete --careful --no-progressbars
-          cd juliamono-nerd-font
-          zip -r font.zip font
+          zip -r font.zip juliamono-nerd-font/font
 
       - name: Commit and Push
         env:
@@ -40,6 +39,7 @@ jobs:
           cd juliamono-nerd-font
           git config --global user.email "${GITHUB_ACTOR_ID}+${GITHUB_ACTOR}@users.noreply.github.com"
           git config --global user.name "$(gh api /users/${GITHUB_ACTOR} | jq .name -r)"
+          sed "s%\[\*\*Download\*\*\].*%\[\*\*Download\*\*\](https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ inputs.version }}/font.zip)%g" README.md
           git add .
           git commit -m 'Updated juliamono-nerd-font to ${{ inputs.version }}'
           git push
@@ -55,3 +55,4 @@ jobs:
           token: ${{ steps.generate-token.outputs.token }}
           tag_name: ${{ inputs.version }}
           generate_release_notes: true
+          files: font.zip
