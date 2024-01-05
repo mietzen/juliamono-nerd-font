@@ -1,0 +1,25 @@
+name: "Auto Updated"
+
+on:
+  schedule:
+    - cron: "0 04 * * *"
+  workflow_dispatch:
+
+jobs:
+  check-new-release:
+    name: "Check for new releases"
+    runs-on: "ubuntu-latest"
+    steps:
+      - id: new-release
+        run: |
+          JULIA_FONT_VERSION=$(curl -s https://api.github.com/repos/cormullion/juliamono/releases/latest | jq -r .tag_name | tr -d "[:space:]")
+          JULIA_NERD_FONT_VERSION=$(curl -s https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest | jq -r .tag_name | tr -d "[:space:]" || echo -n "v0")
+          if [ ! "${JULIA_FONT_VERSION}" = "${JULIA_NERD_FONT_VERSION}" ]; then
+            echo "release=TRUE" >> $GITHUB_OUTPUT
+            echo "version=${JULIA_FONT_VERSION}"
+          else
+            echo "release=FALSE" >> $GITHUB_OUTPUT
+          fi
+      - name: Trigger patch-font.yaml
+        if: ${{ steps.new-release.outputs.release == 'TRUE' }}
+        run: gh workflow run patch-font.yml -f version=${{ steps.new-release.outputs.version }}
