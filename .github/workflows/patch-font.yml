@@ -30,7 +30,7 @@ jobs:
         run: |
           mkdir -p juliamono-nerd-font/font
           docker run --rm -v `pwd`/juliamono:/in -v `pwd`/juliamono-nerd-font/font:/out nerdfonts/patcher --mono --complete --careful --no-progressbars
-          zip -r font.zip juliamono-nerd-font/font
+          zip -j font.zip juliamono-nerd-font/font/*
 
       - name: Commit and Push
         env:
