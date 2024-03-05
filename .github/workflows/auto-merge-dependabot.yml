@@ -1,5 +1,5 @@
 name: Auto-merge Dependabot
-on: 
+on:
   pull_request:
       types:
         - opened
@@ -26,8 +26,13 @@ jobs:
           token: ${{ steps.generate-token.outputs.token }}
           pull-request-number: ${{ github.event.pull_request.number }}
           merge-method: squash
+      - uses: actions/create-github-app-token@v1
+        id: generate-approval-token
+        with:
+          app-id: ${{ secrets.APP_ID_APPROVE }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
       - name: Auto approve
         if: steps.cpr.outputs.pull-request-operation == 'created'
         run: gh pr review --approve "${{ steps.cpr.outputs.pull-request-number }}"
         env:
-          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+          GH_TOKEN: ${{ steps.generate-approval-token.outputs.token }}
