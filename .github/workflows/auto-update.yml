@@ -16,10 +16,19 @@ jobs:
           JULIA_NERD_FONT_VERSION=$(curl -s https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest | jq -r .tag_name | tr -d "[:space:]" || echo -n "v0")
           if [ ! "${JULIA_FONT_VERSION}" = "${JULIA_NERD_FONT_VERSION}" ]; then
             echo "release=TRUE" >> $GITHUB_OUTPUT
-            echo "version=${JULIA_FONT_VERSION}"
+            echo "version=${JULIA_FONT_VERSION}" >> $GITHUB_OUTPUT
           else
             echo "release=FALSE" >> $GITHUB_OUTPUT
           fi
-      - name: Trigger patch-font.yaml
-        if: ${{ steps.new-release.outputs.release == 'TRUE' }}
-        run: gh workflow run patch-font.yml -f version=${{ steps.new-release.outputs.version }}
+      - uses: actions/checkout@v4
+      - uses: actions/create-github-app-token@v1
+        id: generate-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - name: Repository Dispatch
+        uses: peter-evans/repository-dispatch@v3
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          event-type: new-release-published
+          client-payload: '{"version": "${{ steps.new-release.outputs.version }}"}'

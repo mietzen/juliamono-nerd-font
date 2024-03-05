@@ -6,8 +6,10 @@ on:
       version:
         description: 'juliamono version'
         required: true
-        default: 'v0.053'
+        default: 'v0.054'
         type: string
+  repository_dispatch:
+    types: [new-release-published]
 
 permissions:
   contents: write
@@ -15,15 +17,17 @@ permissions:
 jobs:
   patch:
     runs-on: ubuntu-latest
+    env:
+      version: ${{ github.event.client_payload.version || inputs.version }}
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           path: juliamono-nerd-font
 
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v4
         with:
           repository: 'cormullion/juliamono'
-          ref: ${{ inputs.version }}
+          ref: ${{ env.version }}
           path: juliamono
 
       - name: Patch
@@ -33,26 +37,24 @@ jobs:
           zip -j font.zip juliamono-nerd-font/font/*
 
       - name: Commit and Push
-        env:
-          GH_TOKEN: ${{ github.token }}
         run: |
           cd juliamono-nerd-font
           git config --local user.email "131801252+merger-bot[bot]@users.noreply.github.com"
           git config --local user.name "merger-bot[bot]"
-          sed "s%\[\*\*Download\*\*\].*%\[\*\*Download\*\*\](https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ inputs.version }}/font.zip)%g" README.md
+          sed "s%\[\*\*Download\*\*\].*%\[\*\*Download\*\*\](https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ env.version }}/font.zip)%g" README.md
           git add .
-          git commit -m 'Updated juliamono-nerd-font to ${{ inputs.version }}'
+          git commit -m 'Updated juliamono-nerd-font to ${{ env.version }}'
           git push
 
-      - uses: tibdex/github-app-token@v1
+      - uses: actions/create-github-app-token@v1
         id: generate-token
         with:
-          app_id: ${{ secrets.APP_ID }}
-          private_key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
       - uses: "softprops/action-gh-release@v1"
         with:
           token: ${{ steps.generate-token.outputs.token }}
-          tag_name: ${{ inputs.version }}
+          tag_name: ${{ env.version }}
           generate_release_notes: true
           files: font.zip
