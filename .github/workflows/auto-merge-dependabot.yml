@@ -1,0 +1,33 @@
+name: Auto-merge Dependabot
+on: 
+  pull_request:
+      types:
+        - opened
+      branches:
+        - 'main'
+
+permissions:
+  pull-requests: write
+  contents: write
+
+jobs:
+  auto-merge:
+    runs-on: ubuntu-latest
+    if: github.actor == 'dependabot[bot]'
+    steps:
+      - uses: actions/create-github-app-token@v1
+        id: generate-token
+        with:
+          app-id: ${{ secrets.APP_ID }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+      - uses: peter-evans/enable-pull-request-automerge@v3
+        id: cpr
+        with:
+          token: ${{ steps.generate-token.outputs.token }}
+          pull-request-number: ${{ github.event.pull_request.number }}
+          merge-method: squash
+      - name: Auto approve
+        if: steps.cpr.outputs.pull-request-operation == 'created'
+        run: gh pr review --approve "${{ steps.cpr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
