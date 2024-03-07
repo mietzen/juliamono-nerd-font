@@ -1,10 +1,10 @@
 name: Auto-merge Dependabot
 on:
   pull_request:
-      types:
-        - opened
-      branches:
-        - 'main'
+    types:
+      - opened
+    branches:
+      - "main"
 
 permissions:
   pull-requests: write
@@ -15,24 +15,17 @@ jobs:
     runs-on: ubuntu-latest
     if: github.actor == 'dependabot[bot]'
     steps:
+      - uses: actions/checkout@v3
       - uses: actions/create-github-app-token@v1
         id: generate-token
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
-      - uses: peter-evans/enable-pull-request-automerge@v3
-        id: cpr
-        with:
-          token: ${{ steps.generate-token.outputs.token }}
-          pull-request-number: ${{ github.event.pull_request.number }}
-          merge-method: squash
-      - uses: actions/create-github-app-token@v1
-        id: generate-approval-token
-        with:
-          app-id: ${{ secrets.APP_ID_APPROVE }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
-      - name: Auto approve
-        if: steps.cpr.outputs.pull-request-operation == 'created'
-        run: gh pr review --approve "${{ steps.cpr.outputs.pull-request-number }}"
+      - name: Enable Pull Request Automerge
+        run: gh pr merge --squash --auto "${{ github.event.pull_request.number }}"
         env:
-          GH_TOKEN: ${{ steps.generate-approval-token.outputs.token }}
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
+      - name: Auto approve
+        run: gh pr review --approve "${{ github.event.pull_request.number }}"
+        env:
+          GH_TOKEN: ${{ steps.generate-token.outputs.token }}
