@@ -27,6 +27,7 @@ jobs:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
       - name: Repository Dispatch
+        if: ${{ steps.new-release.outputs.release == 'TRUE' }}
         uses: peter-evans/repository-dispatch@v3
         with:
           token: ${{ steps.generate-token.outputs.token }}
