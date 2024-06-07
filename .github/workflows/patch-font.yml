@@ -11,11 +11,9 @@ on:
   repository_dispatch:
     types: [new-release-published]
 
-permissions:
-  contents: write
-
 jobs:
   patch:
+    name: "Patch nerdfonts into juliamono"
     runs-on: ubuntu-latest
     env:
       version: ${{ github.event.client_payload.version || inputs.version }}
@@ -32,29 +30,74 @@ jobs:
 
       - name: Patch
         run: |
-          mkdir -p juliamono-nerd-font/font
-          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/juliamono-nerd-font/font:/out nerdfonts/patcher --mono --complete --careful --no-progressbars
-          zip -j font.zip juliamono-nerd-font/font/*
+          mkdir -p font
+          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --careful --no-progressbars
+          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --careful --no-progressbars --mono
 
-      - name: Commit and Push
+      - name: Archive Patched Fonts
+        uses: actions/upload-artifact@v4
+        with:
+          name: patched-fonts
+          path: font/*
+          retention-days: 14
+
+      - name: Zip Release Artifacts
+        run: |
+          zip -j fonts.zip font/*
+
+      - name: Update download link in README.md
         run: |
           cd juliamono-nerd-font
-          git config --local user.email "131801252+merger-bot[bot]@users.noreply.github.com"
-          git config --local user.name "merger-bot[bot]"
-          sed -i "s%\[\*\*Download\*\*\].*%\[\*\*Download\*\*\](https://github.com/${GITHUB_REPOSITORY}/releases/download/${{ env.version }}/font.zip)%g" README.md
-          git add .
-          git commit -m 'Updated juliamono-nerd-font to ${{ env.version }}'
-          git push
+          sed -i 's/releases\/download\/v[0-9.]\+/releases\/download\/${{ env.version }}/g' README.md
 
       - uses: actions/create-github-app-token@v1
-        id: generate-token
+        id: merge-token
         with:
           app-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - uses: "softprops/action-gh-release@v1"
+      - name: Create Pull Request
+        id: pr
+        uses: peter-evans/create-pull-request@v6
         with:
-          token: ${{ steps.generate-token.outputs.token }}
-          tag_name: ${{ env.version }}
-          generate_release_notes: true
-          files: font.zip
+          path: juliamono-nerd-font
+          add-paths: README.md
+          token: ${{ steps.merge-token.outputs.token }}
+          title: "[Merger Bot] Release ${{ env.version }}"
+          commit-message: Updated juliamono-nerd-font to ${{ env.version }}
+          committer: merger-bot[bot] <131801252+merger-bot[bot]@users.noreply.github.com>
+          author: merger-bot[bot] <131801252+merger-bot[bot]@users.noreply.github.com>
+          branch: auto-update
+          labels: |
+            automated pr
+            update
+          body: |
+            Updated juliamono-nerd-font to ${{ env.version }}
+
+      - name: Enable Pull Request auto merge
+        if: steps.pr.outputs.pull-request-operation == 'created'
+        working-directory: juliamono-nerd-font
+        run: gh pr merge --squash --auto "${{ steps.pr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ steps.merge-token.outputs.token }}
+
+      - uses: actions/create-github-app-token@v1
+        if: steps.pr.outputs.pull-request-operation == 'created'
+        id: approve-token
+        with:
+          app-id: ${{ secrets.APP_ID_APPROVE }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
+
+      - name: Auto approve
+        if: steps.pr.outputs.pull-request-operation == 'created'
+        working-directory: juliamono-nerd-font
+        run: gh pr review --approve "${{ steps.pr.outputs.pull-request-number }}"
+        env:
+          GH_TOKEN: ${{ steps.approve-token.outputs.token }}
+
+      - name: Create Release
+        if: steps.pr.outputs.pull-request-operation == 'created'
+        working-directory: juliamono-nerd-font
+        run: gh release create ${{ env.version }} ../fonts.zip --generate-notes
+        env:
+          GH_TOKEN: ${{ steps.merge-token.outputs.token }}
