@@ -30,9 +30,20 @@ jobs:
 
       - name: Patch
         run: |
-          mkdir -p juliamono-nerd-font/font
-          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/juliamono-nerd-font/font:/out nerdfonts/patcher --mono --complete --careful --no-progressbars
-          zip -j font.zip juliamono-nerd-font/font/*
+          mkdir -p font
+          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --careful --no-progressbars
+          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --careful --no-progressbars --mono
+
+      - name: Archive Patched Fonts
+        uses: actions/upload-artifact@v4
+        with:
+          name: patched-fonts
+          path: font/*
+          retention-days: 14
+
+      - name: Zip Release Artifacts
+        run: |
+          zip -j fonts.zip font/*
 
       - name: Update download link in README.md
         run: |
@@ -47,9 +58,9 @@ jobs:
 
       - name: Create Pull Request
         id: pr
-        uses: peter-evans/create-pull-request@v5
+        uses: peter-evans/create-pull-request@v6
         with:
-          path: ./juliamono-nerd-font
+          path: juliamono-nerd-font
           add-paths: README.md
           token: ${{ steps.merge-token.outputs.token }}
           title: "[Merger Bot] Release ${{ env.version }}"
@@ -65,6 +76,7 @@ jobs:
 
       - name: Enable Pull Request auto merge
         if: steps.pr.outputs.pull-request-operation == 'created'
+        working-directory: juliamono-nerd-font
         run: gh pr merge --squash --auto "${{ steps.pr.outputs.pull-request-number }}"
         env:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
@@ -78,14 +90,14 @@ jobs:
 
       - name: Auto approve
         if: steps.pr.outputs.pull-request-operation == 'created'
+        working-directory: juliamono-nerd-font
         run: gh pr review --approve "${{ steps.pr.outputs.pull-request-number }}"
         env:
           GH_TOKEN: ${{ steps.approve-token.outputs.token }}
 
-      - uses: "softprops/action-gh-release@v1"
+      - name: Create Release
         if: steps.pr.outputs.pull-request-operation == 'created'
-        with:
-          token: ${{ steps.merge-token.outputs.token }}
-          tag_name: ${{ env.version }}
-          generate_release_notes: true
-          files: font.zip
+        working-directory: juliamono-nerd-font
+        run: gh release create ${{ env.version }} ../fonts.zip --generate-notes
+        env:
+          GH_TOKEN: ${{ steps.merge-token.outputs.token }}

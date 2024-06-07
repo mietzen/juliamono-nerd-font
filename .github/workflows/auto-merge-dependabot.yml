@@ -1,10 +1,14 @@
-name: Auto Merge
+name: Auto Merge Dependabot
 on:
   pull_request:
     types:
       - opened
     branches:
       - "main"
+
+permissions:
+  pull-requests: write
+  contents: write
 
 jobs:
   auto-merge:
@@ -16,8 +20,8 @@ jobs:
       - uses: actions/create-github-app-token@v1
         id: generate-token
         with:
-          app-id: ${{ secrets.APP_ID }}
-          private-key: ${{ secrets.APP_PRIVATE_KEY }}
+          app-id: ${{ secrets.APP_ID_APPROVE }}
+          private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
       - name: Enable Pull Request Automerge
         run: gh pr merge --squash --auto "${{ github.event.pull_request.number }}"
         env:
