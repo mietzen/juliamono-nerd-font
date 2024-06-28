@@ -2,7 +2,7 @@
 
 This is a the beautiful [JuliaMono](https://github.com/cormullion/juliamono) font by Cormullion extended via fontforge (aka [Nerd Fonts Patcher](https://github.com/ryanoasis/nerd-fonts#font-patcher)) with all single width glyphs from the Nerd Fonts project.
 
-### [Download](https://github.com/mietzen/juliamono-nerd-font/releases/download/v0.055/fonts.zip)
+### [Download](https://github.com/mietzen/juliamono-nerd-font/releases/download/v0.056/fonts.zip)
 
 ## Example
 
