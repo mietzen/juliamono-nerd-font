@@ -4,7 +4,7 @@ This is a the beautiful [JuliaMono](https://github.com/cormullion/juliamono) fon
 
 **Feel free to fork and modify!**
 
-### [Download](https://github.com/mietzen/juliamono-nerd-font/releases/download/v0.056/fonts.zip)
+### [Download](https://github.com/mietzen/juliamono-nerd-font/releases/download/v0.057/fonts.zip)
 
 ## Example
 
