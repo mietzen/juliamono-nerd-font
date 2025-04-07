@@ -50,7 +50,7 @@ jobs:
           cd juliamono-nerd-font
           sed -i 's/releases\/download\/v[0-9.]\+/releases\/download\/${{ env.version }}/g' README.md
 
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v2
         id: merge-token
         with:
           app-id: ${{ secrets.APP_ID }}
@@ -81,7 +81,7 @@ jobs:
         env:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
 
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v2
         if: steps.pr.outputs.pull-request-operation == 'created'
         id: approve-token
         with:
