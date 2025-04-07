@@ -21,7 +21,7 @@ jobs:
             echo "release=FALSE" >> $GITHUB_OUTPUT
           fi
       - uses: actions/checkout@v4
-      - uses: actions/create-github-app-token@v1
+      - uses: actions/create-github-app-token@v2
         id: generate-token
         with:
           app-id: ${{ secrets.APP_ID }}
