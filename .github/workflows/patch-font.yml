@@ -33,6 +33,14 @@ jobs:
           mkdir -p font
           docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --careful --no-progressbars
           docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --careful --no-progressbars --mono
+          # rename original files and use the filename-based naming scheme to create the forced (non-careful) version
+          # nerdfonts/patcher lacks an option to specify a custom font name suffix, so this is the next best thing
+          # --makegroups 4 helps shorten the resulting names: Nerd Fonts -> NF
+          for file in juliamono/JuliaMono-*; do
+            mv "$file" "juliamono/JuliaMonoForced-${file#*-}"
+          done
+          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --name filename --makegroups 4 --no-progressbars
+          docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --name filename --makegroups 4 --no-progressbars --mono
 
       - name: Archive Patched Fonts
         uses: actions/upload-artifact@v4
