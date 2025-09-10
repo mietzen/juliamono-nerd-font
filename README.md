@@ -9,7 +9,7 @@ The download contains four variants of the font, which differ as follows:
 
 **Feel free to fork and modify!**
 
-### [Download](https://github.com/mietzen/juliamono-nerd-font/releases/download/v0.060/fonts.zip)
+### [Download](https://github.com/mietzen/juliamono-nerd-font/releases/download/v0.061/fonts.zip)
 
 ## Example
 
