@@ -43,7 +43,7 @@ jobs:
           docker run --rm -v `pwd`/juliamono:/in -v `pwd`/font:/out nerdfonts/patcher --complete --name filename --makegroups 4 --no-progressbars --mono
 
       - name: Archive Patched Fonts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         with:
           name: patched-fonts
           path: font/*
