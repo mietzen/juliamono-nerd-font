@@ -18,11 +18,11 @@ jobs:
     env:
       version: ${{ github.event.client_payload.version || inputs.version }}
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           path: juliamono-nerd-font
 
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           repository: 'cormullion/juliamono'
           ref: ${{ env.version }}

@@ -20,7 +20,7 @@ jobs:
           else
             echo "release=FALSE" >> $GITHUB_OUTPUT
           fi
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/create-github-app-token@v2
         id: generate-token
         with:
