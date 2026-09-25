@@ -71,6 +71,7 @@ jobs:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
 
       - name: Create Pull Request and Auto Merge
+        id: pr
         working-directory: juliamono-nerd-font
         env:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
@@ -80,9 +81,12 @@ jobs:
           git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.merge-token.outputs.app-slug }}[bot]@users.noreply.github.com'
           git checkout -B "$BRANCH"
           git add README.md
-          if ! git diff --cached --quiet; then
-            git commit -m "Updated juliamono-nerd-font to ${{ env.version }}"
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
           fi
+          git commit -m "Updated juliamono-nerd-font to ${{ env.version }}"
           git push -u origin "$BRANCH" --force
           PR_URL=$(gh pr create \
             --title "[Merger Bot] Release ${{ env.version }}" \
@@ -90,14 +94,17 @@ jobs:
             --label "automated pr" \
             --label "update")
           gh pr merge --squash --auto "$PR_URL"
+          echo "created=true" >> "$GITHUB_OUTPUT"
 
       - uses: actions/create-github-app-token@v3
+        if: steps.pr.outputs.created == 'true'
         id: approve-token
         with:
           client-id: ${{ secrets.APP_ID_APPROVE }}
           private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
 
       - name: Auto approve
+        if: steps.pr.outputs.created == 'true'
         working-directory: juliamono-nerd-font
         env:
           GH_TOKEN: ${{ steps.approve-token.outputs.token }}
@@ -105,6 +112,7 @@ jobs:
           gh pr review --approve "auto-update"
 
       - name: Create Release
+        if: steps.pr.outputs.created == 'true'
         working-directory: juliamono-nerd-font
         env:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
