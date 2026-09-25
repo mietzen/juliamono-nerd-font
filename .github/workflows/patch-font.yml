@@ -14,7 +14,7 @@ on:
 jobs:
   patch:
     name: "Patch nerdfonts into juliamono"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     env:
       version: ${{ github.event.client_payload.version || inputs.version }}
     steps:
@@ -61,51 +61,60 @@ jobs:
       - uses: actions/create-github-app-token@v3
         id: merge-token
         with:
-          app-id: ${{ secrets.APP_ID }}
+          client-id: ${{ secrets.APP_ID }}
           private-key: ${{ secrets.APP_PRIVATE_KEY }}
 
-      - name: Create Pull Request
-        id: pr
-        uses: peter-evans/create-pull-request@v8
-        with:
-          path: juliamono-nerd-font
-          add-paths: README.md
-          token: ${{ steps.merge-token.outputs.token }}
-          title: "[Merger Bot] Release ${{ env.version }}"
-          commit-message: Updated juliamono-nerd-font to ${{ env.version }}
-          committer: merger-bot[bot] <131801252+merger-bot[bot]@users.noreply.github.com>
-          author: merger-bot[bot] <131801252+merger-bot[bot]@users.noreply.github.com>
-          branch: auto-update
-          labels: |
-            automated pr
-            update
-          body: |
-            Updated juliamono-nerd-font to ${{ env.version }}
-
-      - name: Enable Pull Request auto merge
-        if: steps.pr.outputs.pull-request-operation == 'created'
-        working-directory: juliamono-nerd-font
-        run: gh pr merge --squash --auto "${{ steps.pr.outputs.pull-request-number }}"
+      - name: Get GitHub App User ID
+        id: get-user-id
+        run: echo "user-id=$(gh api "/users/${{ steps.merge-token.outputs.app-slug }}[bot]" --jq .id)" >> "$GITHUB_OUTPUT"
         env:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
 
+      - name: Create Pull Request and Auto Merge
+        id: pr
+        working-directory: juliamono-nerd-font
+        env:
+          GH_TOKEN: ${{ steps.merge-token.outputs.token }}
+        run: |
+          BRANCH="auto-update"
+          git config --global user.name '${{ steps.merge-token.outputs.app-slug }}[bot]'
+          git config --global user.email '${{ steps.get-user-id.outputs.user-id }}+${{ steps.merge-token.outputs.app-slug }}[bot]@users.noreply.github.com'
+          git checkout -B "$BRANCH"
+          git add README.md
+          if git diff --cached --quiet; then
+            echo "No changes to commit"
+            echo "created=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          git commit -m "Updated juliamono-nerd-font to ${{ env.version }}"
+          git push -u origin "$BRANCH" --force
+          PR_URL=$(gh pr create \
+            --title "[Merger Bot] Release ${{ env.version }}" \
+            --body "Updated juliamono-nerd-font to ${{ env.version }}" \
+            --label "automated pr" \
+            --label "update")
+          gh pr merge --squash --auto "$PR_URL"
+          echo "created=true" >> "$GITHUB_OUTPUT"
+
       - uses: actions/create-github-app-token@v3
-        if: steps.pr.outputs.pull-request-operation == 'created'
+        if: steps.pr.outputs.created == 'true'
         id: approve-token
         with:
-          app-id: ${{ secrets.APP_ID_APPROVE }}
+          client-id: ${{ secrets.APP_ID_APPROVE }}
           private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
 
       - name: Auto approve
-        if: steps.pr.outputs.pull-request-operation == 'created'
+        if: steps.pr.outputs.created == 'true'
         working-directory: juliamono-nerd-font
-        run: gh pr review --approve "${{ steps.pr.outputs.pull-request-number }}"
         env:
           GH_TOKEN: ${{ steps.approve-token.outputs.token }}
+        run: |
+          gh pr review --approve "auto-update"
 
       - name: Create Release
-        if: steps.pr.outputs.pull-request-operation == 'created'
+        if: steps.pr.outputs.created == 'true'
         working-directory: juliamono-nerd-font
-        run: gh release create ${{ env.version }} ../fonts.zip --generate-notes
         env:
           GH_TOKEN: ${{ steps.merge-token.outputs.token }}
+        run: |
+          gh release create ${{ env.version }} ../fonts.zip --generate-notes

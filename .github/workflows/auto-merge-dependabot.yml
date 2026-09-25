@@ -13,14 +13,14 @@ permissions:
 jobs:
   auto-merge:
     name: "Auto Merge Dependabot PR"
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     if: github.actor == 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v7
       - uses: actions/create-github-app-token@v3
         id: generate-token
         with:
-          app-id: ${{ secrets.APP_ID_APPROVE }}
+          client-id: ${{ secrets.APP_ID_APPROVE }}
           private-key: ${{ secrets.APP_PRIVATE_KEY_APPROVE }}
       - name: Enable Pull Request Automerge
         run: gh pr merge --squash --auto "${{ github.event.pull_request.number }}"
